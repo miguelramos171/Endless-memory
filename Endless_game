@@ -1,0 +1,135 @@
+import tkinter as tk
+import random
+
+class Memory3x3Game:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Memoria 3×3")
+        self.root.geometry("520x600")
+        self.root.resizable(False, False)
+        self.root.configure(bg="#f8f9fa")
+
+        
+        self.colors = [
+            "#EF5350",  # Rojo
+            "#FF9800",  # Naranja
+            "#FFD54F",  # Amarillo
+            "#66BB6A",  # Verde
+            "#26C6DA",  # Cian
+            "#42A5F5",  # Azul
+            "#AB47BC",  # Morado
+            "#EC407A",  # Rosa
+            "#B0BEC5",  # Gris claro
+        ]
+
+        self.sequence = []
+        self.player_input = []
+        self.level = 0
+
+
+        self.status_label = tk.Label(
+            root, text="Presiona 'Nuevo Juego'", 
+            font=("Arial", 16, "bold"), bg="#f8f9fa", fg="#546E7A"
+        )
+        self.status_label.pack(pady=10)
+
+        self.level_label = tk.Label(
+            root, text="Nivel: 0", font=("Arial", 14), bg="#f8f9fa", fg="#37474F"
+        )
+        self.level_label.pack()
+
+        # Cuadrícula 3×3
+        grid_frame = tk.Frame(root, bg="#f8f9fa")
+        grid_frame.pack(pady=20)
+
+        self.buttons = []
+        for i in range(9):
+            btn = tk.Button(
+                grid_frame,
+                bg=self.colors[i],
+                width=8,
+                height=4,
+                relief="flat",
+                bd=2,
+                command=lambda idx=i: self.on_click(idx)
+            )
+            btn.grid(row=i // 3, column=i % 3, padx=8, pady=8)
+            self.buttons.append(btn)
+
+        # Botón de nuevo juego
+        self.restart_btn = tk.Button(
+            root, text="Nuevo Juego", 
+            command=self.new_game,
+            bg="#2196F3", fg="white", font=("Arial", 12, "bold"),
+            relief="flat", padx=20, pady=6
+        )
+        self.restart_btn.pack(pady=10)
+
+        # Instrucción sutil
+        tk.Label(
+            root,
+            text="👀 Observa y Repite. Cada nivel suma 1 paso.",
+            font=("Arial", 10), fg="#78909C", bg="#f8f9fa"
+        ).pack(side="bottom", pady=5)
+
+    def new_game(self):
+        self.sequence.clear()
+        self.player_input.clear()
+        self.level = 0
+        self.update_level()
+        self.status_label.config(text="👀 Observa la secuencia...", fg="#0288D1")
+        self.root.after(600, self.next_level)
+
+    def next_level(self):
+        
+        self.sequence.append(random.randint(0, 8))
+        self.level += 1
+        self.update_level()
+        self.player_input.clear()
+        self.show_sequence(0)
+
+    def show_sequence(self, idx):
+        if idx == len(self.sequence):
+            self.status_label.config(text="👆 Repite la secuencia", fg="#D81B60")
+            return
+
+        pos = self.sequence[idx]
+        original_color = self.buttons[pos]["bg"]
+     
+        self.buttons[pos].config(bg="white")
+        self.root.after(250, lambda p=pos, oc=original_color: self.buttons[p].config(bg=oc))
+        self.root.after(550, lambda i=idx: self.show_sequence(i + 1))
+
+    def on_click(self, idx):
+        if len(self.player_input) >= len(self.sequence):
+            return  
+
+        self.player_input.append(idx)
+
+
+        if self.player_input[-1] != self.sequence[len(self.player_input) - 1]:
+            self.status_label.config(text=f"❌ Fallaste en nivel {self.level}", fg="#E53935")
+            self.flash_buttons(error=True)
+            return
+
+
+        if len(self.player_input) == len(self.sequence):
+            self.status_label.config(text="✅ ¡Correcto!", fg="#43A047")
+            self.root.after(700, self.next_level)
+
+    def update_level(self):
+        self.level_label.config(text=f"Nivel: {self.level}")
+
+    def flash_buttons(self, error=False):
+        flash_color = "#FFEBEE" if error else "#E8F5E9"
+        originals = [btn["bg"] for btn in self.buttons]
+        for btn in self.buttons:
+            btn.config(bg=flash_color)
+        self.root.after(200, lambda: [btn.config(bg=c) for btn, c in zip(self.buttons, originals)])
+
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = Memory3x3Game(root)
+    root.mainloop()
